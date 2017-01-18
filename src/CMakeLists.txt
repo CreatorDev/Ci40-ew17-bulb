@@ -1,0 +1,9 @@
+ADD_EXECUTABLE(bulb_controller bulb_controller.c)
+
+FIND_LIBRARY(LIB_AWA_STATIC libawa.so ${STAGING_DIR}/usr/lib)
+#FIND_LIBRARY(LIB_CONFIG libconfig.so ${STAGING_DIR}/usr/lib)
+FIND_LIBRARY(LIB_LETMECREATECORE libletmecreate_core.so ${STAGING_DIR}/usr/lib)
+FIND_LIBRARY(LIB_LETMECREATECLICK libletmecreate_click.so ${STAGING_DIR}/usr/lib)
+TARGET_LINK_LIBRARIES(bulb_controller ${LIB_CONFIG} ${LIB_AWA_STATIC} ${LIB_LETMECREATECORE} ${LIB_LETMECREATECLICK})
+	
+INSTALL(TARGETS bulb_controller RUNTIME DESTINATION bin)
