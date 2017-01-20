@@ -14,7 +14,7 @@ cmake_install.*
 CMakeCache.txt
 install_manifest.txt
 CMakeFiles/
-sesame_gateway_appd
+bulb_controller
 **/Makefile
 ipkg-pistachio/
 ipkg-install/
