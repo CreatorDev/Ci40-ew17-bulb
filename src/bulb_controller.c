@@ -10,8 +10,6 @@
 #include "log.h"
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
-#define IPC_PORT (12345)
-#define IPC_ADDRESS "127.0.0.1"
 #define OPERATION_PERFORM_TIMEOUT 1000
 #define LIGHT_CONTROL_OBJECT_ID 3311
 #define COLOUR_RESOURCE_ID 5706
