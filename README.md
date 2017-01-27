@@ -1,6 +1,6 @@
 ![logo](https://static.creatordev.io/logo-md-s.svg)
 
-# Embeddod World 2017 - bulb controller app
+# Embedded World 2017 - bulb controller app
 
 ## Overview
 
