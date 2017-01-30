@@ -22,7 +22,7 @@ include $(INCLUDE_DIR)/cmake.mk
 define Package/bulb-controller
   SECTION:=utils
   CATEGORY:=Utilities
-  DEPENDS:= +awalwm2m +libconfig
+  DEPENDS:= +awalwm2m
   TITLE:=Bluetooth bulb controller app
 endef
 
