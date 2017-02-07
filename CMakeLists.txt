@@ -1,3 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
 project("bulb-controller")
+include_directories(${STAGING_DIR} ${STAGING_DIR}/usr/include/glib-2.0)
 ADD_SUBDIRECTORY(src)
+MESSAGE( STATUS "UWAGA : " ${STAGING_DIR})
