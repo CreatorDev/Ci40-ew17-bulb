@@ -1,3 +1,25 @@
+/*
+ *
+ *  EW17 Bulb Controller
+ *
+ *  Copyright (C) 2017  Imagination Technologies Limited
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ *
+ */
+
 #include <stdio.h>
 #include <sys/time.h>
 #include <unistd.h>
@@ -14,40 +36,30 @@
 #include "colors.h"
 #include "awa.h"
 
-#define CHAR_UUID "0xffe9"
+#define CHAR_UUID "0000ffe9-0000-1000-8000-00805f9b34fb"
 
 static bool connected = false;
 static GAttrib *attrib = NULL;
 static GIOChannel *chan = NULL;
 static char *address = NULL;
-static char *handle = NULL;
+static guint16 value_handle = 0;
 
 static GOptionEntry _params[] =
 {
         { "target", 't', 0, G_OPTION_ARG_STRING, &address, "MAC address of the target device", NULL },
-        { "handle", 'h', 0, G_OPTION_ARG_STRING, &handle, "Value handle", NULL },
         { NULL }
 };
 
 static GMainLoop *_event_loop;
 
+static void connect_cb(GIOChannel *io, GError *err, gpointer user_data);
+static gboolean channel_watcher(GIOChannel *chan, GIOCondition cond, gpointer user_data);
+
+
 static void exit_app(int __attribute__((unused)) (signo))
 {
     g_message("Exitting app...");
     g_main_loop_quit(_event_loop);
-}
-
-static int strtohandle(const char *src)
-{
-    char *e;
-    int dst;
-
-    errno = 0;
-    dst = strtoll(src, &e, 16);
-    if (errno != 0 || *e != '\0')
-        return -EINVAL;
-
-    return dst;
 }
 
 static void set_bulb_color(const char *color)
@@ -71,8 +83,65 @@ static void set_bulb_color(const char *color)
         {
             return;
         }
-        gatt_write_char(attrib, strtohandle(handle), value, plen, NULL, NULL);
+        gatt_write_char(attrib, value_handle, value, plen, NULL, NULL);
     }
+}
+
+static void disconnect_io()
+{
+    if (connected == false)
+        return;
+
+    g_attrib_unref(attrib);
+    attrib = NULL;
+
+
+    g_io_channel_shutdown(chan, FALSE, NULL);
+    g_io_channel_unref(chan);
+    chan = NULL;
+
+    connected = false;
+}
+
+static void try_connect_to_bulb(GError** error)
+{
+    g_message("Attempting to connect to the bulb...");
+    chan = gatt_connect("hci0", address, "", "low", 0, 0, connect_cb, error);
+    if (chan == NULL)
+    {
+        return;
+    }
+    g_io_add_watch(chan, G_IO_HUP, channel_watcher, NULL);
+
+}
+
+static gboolean channel_watcher(GIOChannel *chan, GIOCondition cond, gpointer user_data)
+{
+    g_printerr("Bulb disconnected...");
+    disconnect_io();
+    GError *error = NULL;
+    try_connect_to_bulb(&error);
+    if (error)
+    {
+        g_error("%s", error->message);
+        free(error);
+    }
+    return FALSE;
+}
+
+static void char_cb(GSList *characteristics, uint8_t status, void *user_data)
+{
+    if (status) {
+        g_error("Discover all characteristics failed: %s", att_ecode2str(status));
+        return;
+    }
+    g_message("Successfully found bulb control characteristic");
+    struct gatt_char *characteristic = characteristics->data;
+    value_handle = characteristic->value_handle;
+
+    char *color;
+    awa_get_current_color(&color);
+    set_bulb_color(color);
 }
 
 static void connect_cb(GIOChannel *io, GError *err, gpointer user_data)
@@ -80,23 +149,38 @@ static void connect_cb(GIOChannel *io, GError *err, gpointer user_data)
     if (err)
     {
         g_message("%s", err->message);
-        g_main_loop_quit(_event_loop);
         connected = false;
+        GError *error = NULL;
+        try_connect_to_bulb(&error);
+        if (error)
+        {
+            g_error("%s", error->message);
+            g_main_loop_quit(_event_loop);
+        }
         return;
     }
     connected = true;
     g_message("Successfully connected to BTLE device");
     attrib = g_attrib_new(io);
 
-    char *color;
-    awa_get_current_color(&color);
-    set_bulb_color(color);
+    bt_uuid_t uuid;
+    if (bt_string_to_uuid(&uuid, CHAR_UUID) < 0)
+    {
+        g_error("Invalid UUID\n");
+        return;
+    }
+    g_message("Attempting to get bulb control characteristic...");
+    gatt_discover_char(attrib, 0x0001, 0xffff, &uuid, char_cb, NULL);
+
 }
 
 
 static void color_changed_cb(const char *color)
 {
-    set_bulb_color(color);
+    if (connected && value_handle > 0)
+    {
+        set_bulb_color(color);
+    }
 }
 
 int main(int argc, char **argv)
@@ -118,16 +202,7 @@ int main(int argc, char **argv)
         g_error("You must specify device MAC address");
         return 1;
     }
-    if (handle == NULL)
-    {
-        g_error("You must specify value handle");
-        return 1;
-    }
-    if (strtohandle(handle) == EINVAL)
-    {
-        g_error("Invalid handle");
-        return 1;
-    }
+
 
     g_option_context_free(context);
 
@@ -150,16 +225,14 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    chan = gatt_connect("hci0", address, "", "low", 0, 0, connect_cb, &error);
-
-    if (chan == NULL)
+    try_connect_to_bulb(&error);
+    if (error)
     {
         g_error("%s", error->message);
         return 1;
     }
 
     _event_loop = g_main_loop_new(NULL, FALSE);
-
 
 
     g_timeout_add(1000, awa_process, (gpointer) session);

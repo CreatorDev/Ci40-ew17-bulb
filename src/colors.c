@@ -25,24 +25,24 @@
 static Color colortmp[] = {
         {
             .colorName="red",
-            .colorValue="56FF0000"
+            .colorValue="56FF000000F0AA"
         },
         {
             .colorName="blue",
-            .colorValue="560000FF"
+            .colorValue="560000FF00F0AA"
         },
         {
             .colorName="green",
-            .colorValue="5600FF00"
+            .colorValue="5600FF0000F0AA"
 
         },
         {
             .colorName="yellow",
-            .colorValue ="56FFFF00"
+            .colorValue ="56FFFF0000F0AA"
         },
         {
             .colorName="none",
-            .colorValue="56000000"
+            .colorValue="5600000000F0AA"
         }
 };
 

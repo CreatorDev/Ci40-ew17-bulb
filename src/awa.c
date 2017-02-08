@@ -47,7 +47,7 @@ static void awa_color_changed_cb(const AwaChangeSet *changeSet, void *context)
     }
     if (validColour)
     {
-        g_message("Value of resource /3311/0/5706 changed to: %s\n", value);
+        g_message("Value of resource /3311/0/5706 changed to: %s", value);
 
         color_changed_cb(value);
     }
