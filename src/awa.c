@@ -30,14 +30,15 @@ static AwaClientChangeSubscription *subscription;
 static ColorChangedCB color_changed_cb;
 static char lightControlObjectInstancePath[40];
 static char colorResourcePath[40];
-
+extern Color *colortmp;
 static void awa_color_changed_cb(const AwaChangeSet *changeSet, void *context)
 {
     const char *value;
     AwaChangeSet_GetValueAsCStringPointer(changeSet, "/3311/0/5706", &value);
     int i = 0;
     bool validColour = false;
-    for (i = 0; i < 5; i++)
+
+    for (i = 0; i < 7; i++)
     {
         if (strcmp(colors[i].colorName, value) == 0)
         {
