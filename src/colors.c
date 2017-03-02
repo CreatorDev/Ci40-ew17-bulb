@@ -38,7 +38,15 @@ static Color colortmp[] = {
         },
         {
             .colorName="yellow",
-            .colorValue ="56FFFF0000F0AA"
+            .colorValue ="56FFD50000F0AA"
+        },
+        {
+            .colorName="orange",
+            .colorValue ="56FF610000F0AA"
+        },
+        {
+            .colorName="purple",
+            .colorValue ="566C00FF00F0AA"
         },
         {
             .colorName="none",

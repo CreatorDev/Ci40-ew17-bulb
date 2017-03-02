@@ -17,5 +17,6 @@ script:
   - cd $CI40_SDK && ./scripts/feeds update -a && ./scripts/feeds install -a
   - sed --in-place --follow-symlinks -i '/^PKG_SOURCE/ d' feeds/local/bulb-controller/Makefile
   - make package/awalwm2m/compile
+  - make package/glib2/compile
   - make package/bulb-controller/prepare USE_SOURCE_DIR=$TRAVIS_BUILD_DIR
   - make package/bulb-controller/compile V=s

@@ -70,7 +70,7 @@ static void set_bulb_color(const char *color)
     uint8_t *value = NULL;
     char *colorValue = NULL;
 
-    for (int i = 0; i < 5; i++)
+    for (int i = 0; i < 7; i++)
     {
         if (strcmp(colors[i].colorName, color) == 0)
         {
