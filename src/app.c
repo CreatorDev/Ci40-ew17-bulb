@@ -42,11 +42,13 @@ static bool connected = false;
 static GAttrib *attrib = NULL;
 static GIOChannel *chan = NULL;
 static char *address = NULL;
+static int ipcPort = 12345;
 static guint16 value_handle = 0;
 
 static GOptionEntry _params[] =
 {
         { "target", 't', 0, G_OPTION_ARG_STRING, &address, "MAC address of the target device", NULL },
+        { "ipcPort", 'i', 0, G_OPTION_ARG_INT, &ipcPort, "IPC address of awa client", NULL },
         { NULL }
 };
 
@@ -188,6 +190,7 @@ int main(int argc, char **argv)
     GError *error = NULL;
     GOptionContext *context;
 
+    g_message("Starting Bulb Controller app");
     context = g_option_context_new("Bulb Controller Application");
     g_option_context_add_main_entries(context, _params, NULL);
 
@@ -202,7 +205,8 @@ int main(int argc, char **argv)
         g_error("You must specify device MAC address");
         return 1;
     }
-
+    g_message("Bulb MAC address: %s", address);
+    g_message("Awa IPCPort %d", ipcPort);
 
     g_option_context_free(context);
 
@@ -217,7 +221,7 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    AwaClientSession *session = awa_setup(color_changed_cb, &error);
+    AwaClientSession *session = awa_setup(color_changed_cb, ipcPort, &error);
 
     if (error)
     {

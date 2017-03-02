@@ -33,7 +33,7 @@
 
 typedef void (*ColorChangedCB)(const char* new_color);
 
-AwaClientSession* awa_setup(ColorChangedCB, GError**);
+AwaClientSession* awa_setup(ColorChangedCB, int ipcPort, GError**);
 
 void awa_cleanup(void);
 

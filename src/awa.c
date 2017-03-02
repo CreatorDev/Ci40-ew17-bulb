@@ -57,11 +57,11 @@ static void awa_color_changed_cb(const AwaChangeSet *changeSet, void *context)
     }
 }
 
-AwaClientSession* awa_setup(ColorChangedCB colorchangedCB, GError **error)
+AwaClientSession* awa_setup(ColorChangedCB colorchangedCB, int ipcPort, GError **error)
 {
     color_changed_cb = colorchangedCB;
     session = AwaClientSession_New();
-
+    AwaClientSession_SetIPCAsUDP(session, "127.0.0.1", ipcPort);
     AwaError result = AwaClientSession_Connect(session);
     if (result != AwaError_Success) {
         g_set_error(error, 1 , result, "Unable to establish awa session");
