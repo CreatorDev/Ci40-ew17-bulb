@@ -39,6 +39,7 @@
 #define CHAR_UUID "0000ffe9-0000-1000-8000-00805f9b34fb"
 
 static bool connected = false;
+static bool connecting = false;
 static GAttrib *attrib = NULL;
 static GIOChannel *chan = NULL;
 static char *address = NULL;
@@ -107,34 +108,33 @@ static void disconnect_io()
 
 static void try_connect_to_bulb(GError** error)
 {
+    connecting = true;
     g_message("Attempting to connect to the bulb...");
     chan = gatt_connect("hci0", address, "", "low", 0, 0, connect_cb, error);
     if (chan == NULL)
     {
+        connecting = false;
         return;
     }
+
     g_io_add_watch(chan, G_IO_HUP, channel_watcher, NULL);
+
+
 
 }
 
 static gboolean channel_watcher(GIOChannel *chan, GIOCondition cond, gpointer user_data)
 {
-    g_printerr("Bulb disconnected...");
+    g_printerr("Bulb disconnected...\n");
     disconnect_io();
-    GError *error = NULL;
-    try_connect_to_bulb(&error);
-    if (error)
-    {
-        g_error("%s", error->message);
-        free(error);
-    }
+
     return FALSE;
 }
 
 static void char_cb(GSList *characteristics, uint8_t status, void *user_data)
 {
     if (status) {
-        g_error("Discover all characteristics failed: %s", att_ecode2str(status));
+        g_printerr("Discover all characteristics failed: %s\n", att_ecode2str(status));
         return;
     }
     g_message("Successfully found bulb control characteristic");
@@ -148,19 +148,15 @@ static void char_cb(GSList *characteristics, uint8_t status, void *user_data)
 
 static void connect_cb(GIOChannel *io, GError *err, gpointer user_data)
 {
+    connecting = false;
     if (err)
     {
-        g_message("%s", err->message);
         connected = false;
-        GError *error = NULL;
-        try_connect_to_bulb(&error);
-        if (error)
-        {
-            g_error("%s", error->message);
-            g_main_loop_quit(_event_loop);
-        }
+
+        g_message("Failed to connect to bulb. %s", err->message);
         return;
     }
+
     connected = true;
     g_message("Successfully connected to BTLE device");
     attrib = g_attrib_new(io);
@@ -183,6 +179,16 @@ static void color_changed_cb(const char *color)
     {
         set_bulb_color(color);
     }
+}
+
+gboolean check_connection(gpointer user_data)
+{
+    //g_message("check connection");
+    if (connected == false && connecting == false) {
+        GError *error = NULL;
+        try_connect_to_bulb(&error);
+    }
+    return TRUE;
 }
 
 int main(int argc, char **argv)
@@ -230,16 +236,12 @@ int main(int argc, char **argv)
     }
 
     try_connect_to_bulb(&error);
-    if (error)
-    {
-        g_error("%s", error->message);
-        return 1;
-    }
 
     _event_loop = g_main_loop_new(NULL, FALSE);
 
 
     g_timeout_add(1000, awa_process, (gpointer) session);
+    g_timeout_add(2000, check_connection, NULL);
 
     g_main_loop_run(_event_loop);
 
